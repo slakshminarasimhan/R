@@ -7,7 +7,7 @@ library(tidytext)
 library(data.table)
 
 # import data and do some initial cleaning
-df <- data.table::fread("D:\\Users\\Lakshmi Narasimhan\\Data\\womens-ecommerce-clothing-reviews\\Womens Clothing E-Commerce Reviews.csv", data.table = FALSE) %>%
+df <- data.table::fread("D:\\Users\\Lakshmi Narasimhan\\Data\\womens-ecommerce-clothing-reviews\\Womens Clothing E-Commerce Reviews new.csv", data.table = FALSE) %>%
   rename(ID = V1) %>%
   select(-Title) %>%
   mutate(Age = as.integer(Age))
@@ -79,6 +79,8 @@ df %>%
   summarize(n = sum(n)) %>%
   arrange(desc(n))
 
+library(corpus)
+
 df %>%
   unnest_tokens(word, `Review Text`) %>%
   anti_join(stop_words) %>%
@@ -118,6 +120,7 @@ bow_features <- df %>%
   map_df(replace_na, 0)               # replace NAs with 0
 
 bow_features
+
 
 # join original data and new feature set together
 df_bow <- df %>%
@@ -217,3 +220,27 @@ unique_bigrams <- LL_test %>%
   unite(bigram, word1, word2, sep = " ")
 
 head(unique_bigrams)
+
+#word network
+#bigrams_separated <- bigrams %>%
+#  separate(bigrams, c("word1", "word2"), sep = " ")
+
+bigrams_filtered <- bigrams %>%
+  filter(!word1 %in% stop_words$word) %>%
+  filter(!word2 %in% stop_words$word)
+
+# new bigram counts:
+bigram_counts <- bigrams_filtered %>% 
+  count(word1, word2, sort = TRUE)
+
+#https://www.data-imaginist.com/2017/ggraph-introduction-layouts/
+library(ggraph)
+library(igraph)
+graph <- graph_from_data_frame(bigram_counts)
+
+# Not specifying the layout - defaults to "auto"
+ggraph(graph, layout='kk') + 
+  geom_edge_link() + 
+  geom_node_point()
+
+
